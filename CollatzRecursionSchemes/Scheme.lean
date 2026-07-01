@@ -1,6 +1,7 @@
 module
 
 public import Mathlib.Data.PNat.Basic
+public import Mathlib.Data.Nat.Fib.Basic
 
 set_option linter.style.header false
 
