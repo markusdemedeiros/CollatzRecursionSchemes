@@ -86,7 +86,9 @@ theorem CollatzRecursionScheme.toFun_eq_extend_iff (s : CollatzRecursionScheme) 
 -- Now: Characterize the totality of the scheme
 
 def collatz (n : ℕ) : ℕ :=
-  if n = 1 then 1
+  -- Make the junk n=0 case also just return 1
+  if n = 0 then 1
+  else if n = 1 then 1
   else if n % 2 = 0 then n / 2
   else 3 * n + 1
 
@@ -95,7 +97,7 @@ def CollatzN : ℕ → ℕ → Option ℕ
   | 0, _ => none
   | k+1, n => CollatzN k (collatz n)
 
-def CollatzConjecture : Prop := ∀ n : ℕ+, ∃ fuel : ℕ, CollatzN fuel n = some 1
+def CollatzConjecture : Prop := ∀ n : ℕ, ∃ fuel : ℕ, CollatzN fuel n = some 1
 
 inductive Halts : ℕ+ → Prop where
   | one : Halts 1
@@ -149,13 +151,14 @@ theorem collatz_coe_even {n : ℕ+} (hne : n ≠ 1) (hev : (n : ℕ) % 2 = 0) :
   have hn1 : (n : ℕ) ≠ 1 := by simpa using hne
   have hpos : 0 < (n : ℕ) / 2 := by have := n.pos; omega
   rw [collatz, if_neg hn1, if_pos hev, PNat.toPNat'_coe hpos]
+  grind
 
 theorem collatz_coe_odd {n : ℕ+} (hne : n ≠ 1) (hodd : (n : ℕ) % 2 ≠ 0) :
     collatz (n : ℕ) = ((3 * n + 1 : ℕ+) : ℕ) := by
   have hn1 : (n : ℕ) ≠ 1 := by simpa using hne
   simp only [collatz, if_neg hn1, if_neg hodd]
   push_cast
-  rfl
+  grind
 
 theorem Halts_of_collatzN : ∀ (fuel : ℕ) (n : ℕ+), CollatzN fuel (n : ℕ) = some 1 → Halts n := by
   intro fuel
@@ -204,7 +207,10 @@ theorem Collatz_of_IsTotal (s : CollatzRecursionScheme) (Ht : IsTotalFun s.asOpt
     CollatzConjecture := by
   rw [s.isTotal_iff_halts] at Ht
   intro n
-  exact collatzN_of_halts (Ht n)
+  rcases h : n with (_|n)
+  · exists 1
+  · apply collatzN_of_halts (n := ⟨n + 1, by grind⟩) ?_
+    simp_all
 
 theorem IsTotal_iff_Collatz (s : CollatzRecursionScheme) :
     IsTotalFun s.asOptFun ↔ CollatzConjecture :=
